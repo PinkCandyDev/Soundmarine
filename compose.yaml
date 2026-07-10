@@ -1,0 +1,39 @@
+﻿services:
+  soundmarine-server:
+    container_name: soundmarine.server
+    image: soundmarine.server
+    build:
+      context: .
+      dockerfile: Soundmarine.server/Dockerfile
+    ports:
+      - "3230:3230"
+    volumes:
+      - /home/pinkcandy/ss/covers:/covers
+      - /home/pinkcandy/SoulSeek:/music
+    environment: 
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - JWT_KEY=${JWT_KEY}
+      - DEF_USER=${DEF_USER}
+      - DEF_PASS=${DEF_PASS}
+    depends_on:
+      soundmarine-postgress:
+        condition: service_healthy
+
+  soundmarine-postgress:
+    container_name: soundmarine.postgress
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - /home/pinkcandy/ss/data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5

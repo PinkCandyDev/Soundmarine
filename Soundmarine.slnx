@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="compose.yaml" />
+  </Folder>
+  <Project Path="Soundmarine.lib/Soundmarine.lib.csproj" />
+  <Project Path="Soundmarine.server/Soundmarine.server.csproj" />
+</Solution>
