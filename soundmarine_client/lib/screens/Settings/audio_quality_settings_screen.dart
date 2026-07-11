@@ -117,13 +117,12 @@ class _QualityTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue.withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.05),
+          color: Colors.grey[900],
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? Colors.blue : Colors.transparent,
-            width: 1.5,
+            color: isSelected ? Colors.blue : Colors.grey[800]!,
           ),
         ),
         child: Row(
@@ -136,24 +135,20 @@ class _QualityTile extends StatelessWidget {
                     label,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 4),
                   Text(
                     description,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      fontSize: 13,
-                    ),
+                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
                   ),
                 ],
               ),
             ),
             Icon(
               isSelected ? Icons.check_circle : Icons.circle_outlined,
-              color: isSelected ? Colors.blue : Colors.white.withValues(alpha: 0.3),
+              color: isSelected ? Colors.blue : Colors.grey[600],
             ),
           ],
         ),
