@@ -118,4 +118,16 @@ class ApiService {
       throw Exception('Failed to unlike track: ${response.statusCode}');
     }
   }
+
+  static Future<void> createPlaylist(String name) async {
+    http.Response response = await http.post(
+      Uri.parse('$baseUrl/api/playlists'),
+      headers: await _getHeaders(),
+      body: jsonEncode({'name': name}),
+    );
+    
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('Couldnt create playlist: ${response.statusCode} ${response.body}');
+    }
+  }
 }

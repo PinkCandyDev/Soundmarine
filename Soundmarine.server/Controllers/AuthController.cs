@@ -13,7 +13,7 @@ namespace Soundmarine.server.Controllers;
 [Route("api/auth")]
 public class AuthController : ControllerBase
 {
-    private static string JwtKey => Environment.GetEnvironmentVariable("JWT_KEY") ?? "SuperTajnyKluczDoJWTKtoryMusiBycDlugi123!";
+    private static string JwtKey => Environment.GetEnvironmentVariable("JWT_KEY");
 
     private readonly UserRepository _userRepository;
 

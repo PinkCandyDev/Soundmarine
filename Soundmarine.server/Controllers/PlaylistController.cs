@@ -62,4 +62,20 @@ public class PlaylistList : BaseController
         }
         return Ok(trackDtos);
     }
+
+    [HttpPost]
+    public async Task<IActionResult> CreatePlaylist([FromBody] PlaylistRequest request)
+    {
+        string userId = GetUserId();
+        DateTime now = DateTime.UtcNow;
+        string formatted = now.ToString("o");
+        await _playlistRepository.CreatePlaylist(new Playlist(Guid.NewGuid().ToString(), userId, request.name, 0,formatted,
+            "Playlist"));
+        return Created();
+    }
+    
+    public class PlaylistRequest
+    {
+        public string name { get; set; } = string.Empty;
+    }
 }
