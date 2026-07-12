@@ -27,7 +27,9 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   ApiService.token = prefs.getString('token');
   ApiService.baseUrl = prefs.getString('server_url') ?? ApiService.baseUrl;
-  await LikedService.instance.load();
+  if (ApiService.token != null) {
+    await LikedService.instance.load();
+  }
   await CacheService.init();
   await AudioProxyServer.instance.init();
 

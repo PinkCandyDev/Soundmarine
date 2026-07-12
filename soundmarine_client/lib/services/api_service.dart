@@ -8,7 +8,7 @@ import '../models/playlist.dart';
 import '../models/track_list.dart';
 
 class ApiService {
-  static String baseUrl = 'http://192.168.50.28:3230';
+  static String baseUrl = '';
   static String? token;
 
   static Future<Map<String, String>> _getHeaders() async {

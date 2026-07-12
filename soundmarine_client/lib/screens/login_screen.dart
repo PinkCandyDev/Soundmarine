@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
+import '../services/liked_service.dart';
 import '../widgets/common/app_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -43,6 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ApiService.token = token;
       await prefs.setString('token', token);
       if (mounted) Navigator.pushReplacementNamed(context, '/home');
+      await LikedService.instance.load();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

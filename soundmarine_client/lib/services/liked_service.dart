@@ -12,7 +12,8 @@ class LikedService {
   Future<void> load() async {
     if (_loaded) return;
     try {
-      List<TrackList> tracks = await ApiService.getLikedTracks();
+      List<TrackList> tracks = await ApiService.getLikedTracks()
+          .timeout(const Duration(seconds: 5));
       _likedTrackIds = tracks.map((TrackList t) => t.trackId).toSet();
       _loaded = true;
     } catch (e) {
