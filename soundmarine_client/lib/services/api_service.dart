@@ -130,4 +130,24 @@ class ApiService {
       throw Exception('Couldnt create playlist: ${response.statusCode} ${response.body}');
     }
   }
+  
+  static Future<void> addToPlaylist(String id, String trackId) async {
+    http.Response response = await http.post(
+      Uri.parse('$baseUrl/api/playlists/$id/track/$trackId'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to add track to playlist: ${response.statusCode}');
+    }
+  }
+
+  static Future<void> removeFromPlaylist(String id, String trackId) async {
+    http.Response response = await http.delete(
+      Uri.parse('$baseUrl/api/playlists/$id/track/$trackId'),
+      headers: await _getHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to remove track from playlist: ${response.statusCode}');
+    }
+  }
 }

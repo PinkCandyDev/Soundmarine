@@ -64,17 +64,44 @@ public class PlaylistList : BaseController
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreatePlaylist([FromBody] PlaylistRequest request)
+    public async Task<IActionResult> CreatePlaylist([FromBody] PlaylistCreateRequest createRequest)
     {
         string userId = GetUserId();
         DateTime now = DateTime.UtcNow;
         string formatted = now.ToString("o");
-        await _playlistRepository.CreatePlaylist(new Playlist(Guid.NewGuid().ToString(), userId, request.name, 0,formatted,
+        await _playlistRepository.CreatePlaylist(new Playlist(Guid.NewGuid().ToString(), userId, createRequest.name, 0,formatted,
             "Playlist"));
         return Created();
+    } 
+    
+    
+    [HttpPost("{id}/track/{trackId}")]
+    public async Task<IActionResult> AddToPlaylist(string id, string trackId)
+    {
+        string userId = GetUserId();
+        if (await _playlistRepository.DoesUserOwnPlaylist(userId, id))
+        {
+            DateTime now = DateTime.UtcNow;
+            string formatted = now.ToString("o");
+            await _trackListRepository.AddTrackToPlaylist(id, trackId, formatted);
+            return Ok();
+        }
+        return NotFound("Playlist not found");
+    }
+
+    [HttpDelete("{id}/track/{trackId}")]
+    public async Task<IActionResult> RemoveFromPlaylist(string id, string trackId)
+    {
+        string userId = GetUserId();
+        if (await _playlistRepository.DoesUserOwnPlaylist(userId, id))
+        {
+            await _trackListRepository.RemoveTrackFromPlaylist(id, trackId);
+            return Ok();
+        }
+        return NotFound("Playlist not found");
     }
     
-    public class PlaylistRequest
+    public class PlaylistCreateRequest
     {
         public string name { get; set; } = string.Empty;
     }
