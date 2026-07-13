@@ -67,7 +67,7 @@ class _CreatePlaylistDialogState extends State<CreatePlaylistDialog> {
           hintStyle: const TextStyle(color: Colors.grey),
           errorText: _errorText,
           focusedBorder: const UnderlineInputBorder(
-            borderSide: BorderSide(color: const Color(0xFF001937)),
+            borderSide: BorderSide(color: Color(0xFF001937)),
           ),
         ),
         onChanged: (_) {

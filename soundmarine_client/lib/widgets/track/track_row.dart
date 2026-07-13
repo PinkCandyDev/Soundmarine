@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:soundmarine_client/widgets/track/track_options_sheet.dart';
 import '../../models/track.dart';
 import '../../services/api_service.dart';
 import '../../services/liked_service.dart';
@@ -65,7 +66,7 @@ class TrackRow extends StatelessWidget {
               _LikeButton(trackId: track.id),
               IconButton(
                 icon: Icon(Icons.more_horiz, color: Colors.grey[500]),
-                onPressed: () {},
+                onPressed: () => showTrackOptionsSheet(context, track),
               ),
             ],
           ),
