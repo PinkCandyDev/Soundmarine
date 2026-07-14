@@ -73,14 +73,21 @@ class _MainScreenState extends State<MainScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Overlay.of(context).insert(
         OverlayEntry(
-          builder: (_) => const Positioned(
-            left: 0,
-            right: 0,
-            bottom: 60,
-            child: Material(
-              color: Colors.transparent,
-              child: PlayerBar(),
-            ),
+          builder: (_) => ValueListenableBuilder<PlayerBarConfig>(
+            valueListenable: PlayerBar.config,
+            builder: (context, cfg, _) {
+              return AnimatedPositioned(
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.fastEaseInToSlowEaseOut,
+                left: 0,
+                right: 0,
+                bottom: 60 + cfg.totalOffset,
+                child: Material(
+                  color: Colors.transparent,
+                  child: PlayerBar(),
+                ),
+              );
+            },
           ),
         ),
       );

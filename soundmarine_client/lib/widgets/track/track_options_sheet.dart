@@ -6,8 +6,11 @@ import '../../services/cache_service.dart';
 import '../../screens/list_screen.dart';
 import '../../widgets/common/app_image.dart';
 import '../../widgets/common/page_slide_transition.dart';
+import '../../widgets/player_bar.dart';
 
 Future<void> showTrackOptionsSheet(BuildContext context, Track track) {
+  final previousConfig = PlayerBar.config.value;
+  PlayerBar.config.value = const PlayerBarConfig(extraOffset: 80);
   return showModalBottomSheet(
     context: context,
     backgroundColor: Colors.black,
@@ -15,13 +18,14 @@ Future<void> showTrackOptionsSheet(BuildContext context, Track track) {
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
-    builder: (context) => TrackOptionsSheet(track: track),
+    builder: (context) => TrackOptionsSheet(track: track, previousConfig: previousConfig),
   );
 }
 
 class TrackOptionsSheet extends StatefulWidget {
   final Track track;
-  const TrackOptionsSheet({super.key, required this.track});
+  final PlayerBarConfig previousConfig;
+  const TrackOptionsSheet({super.key, required this.track, required this.previousConfig});
 
   @override
   State<TrackOptionsSheet> createState() => _TrackOptionsSheetState();
@@ -29,6 +33,27 @@ class TrackOptionsSheet extends StatefulWidget {
 
 class _TrackOptionsSheetState extends State<TrackOptionsSheet> {
   bool _showingPlaylists = false;
+  Animation<double>? _routeAnim;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_routeAnim != null) return;
+    _routeAnim = ModalRoute.of(context)?.animation;
+    _routeAnim?.addStatusListener(_onAnim);
+  }
+
+  void _onAnim(AnimationStatus status) {
+    if (status == AnimationStatus.reverse) {
+      PlayerBar.config.value = widget.previousConfig;
+    }
+  }
+
+  @override
+  void dispose() {
+    _routeAnim?.removeStatusListener(_onAnim);
+    super.dispose();
+  }
 
   void _goToAlbum() {
     final albumId = widget.track.albumId;
@@ -87,7 +112,10 @@ class _TrackOptionsSheetState extends State<TrackOptionsSheet> {
             ? _PlaylistPicker(
           key: const ValueKey('playlists'),
           track: widget.track,
-          onBack: () => setState(() => _showingPlaylists = false),
+          onBack: () {
+            setState(() => _showingPlaylists = false);
+            PlayerBar.config.value = const PlayerBarConfig(extraOffset: 80);
+          },
         )
             : _MainOptions(
           key: const ValueKey('main'),
@@ -179,9 +207,24 @@ class _PlaylistPickerState extends State<_PlaylistPicker> {
   @override
   void initState() {
     super.initState();
-    _future = ApiService.getPlaylists();
+    _future = ApiService.getPlaylists().then((playlists) {
+      if (mounted) _setOffset(playlists.length);
+      return playlists;
+    });
+  }
+  
+  double _pickerHeight(int count) {
+    const handle = 20.0;   // 8 + 4 + 8
+    const header = 56.0;
+    const itemH = 56.0;
+    const bottom = 8.0;
+    return handle + header + (count.clamp(1, 4) * itemH) + bottom;
   }
 
+  void _setOffset(int count) {
+    final extra = ((count.clamp(1, 4) - 1).clamp(0, 3)) * 20.0;
+    PlayerBar.config.value = PlayerBarConfig(extraOffset: 80 + extra);
+  }
   Future<void> _add(Playlist playlist) async {
     try {
       await ApiService.addToPlaylist(playlist.id, widget.track.id);
@@ -208,93 +251,101 @@ class _PlaylistPickerState extends State<_PlaylistPicker> {
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: 340,
-      ),
-      child: Column(
-        children: [
-          const SizedBox(height: 8),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[700],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: widget.onBack,
+    return FutureBuilder<List<Playlist>>(
+      future: _future,
+      builder: (context, snapshot) {
+        final playlists = snapshot.data ?? [];
+        final count = playlists.length;
+        final height = _pickerHeight(count);
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return SizedBox(
+            height: _pickerHeight(1),
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        return SizedBox(
+          height: height,
+          child: Column(
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[700],
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                const Text(
-                  'Add to playlist',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: widget.onBack,
+                    ),
+                    const Text(
+                      'Add to playlist',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (snapshot.hasError)
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    "Couldn't load playlists",
+                    style: TextStyle(color: Colors.grey[400]),
+                  ),
+                )
+              else if (playlists.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    'No playlists',
+                    style: TextStyle(color: Colors.grey[400]),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.builder(
+                    physics: const ClampingScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    itemCount: playlists.length,
+                    itemBuilder: (context, index) {
+                      final playlist = playlists[index];
+                      return ListTile(
+                        leading: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[800],
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Icon(Icons.music_note, color: Colors.grey[500]),
+                        ),
+                        title: Text(
+                          playlist.title,
+                          style: const TextStyle(color: Colors.white),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onTap: () => _add(playlist),
+                      );
+                    },
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
-          Expanded(
-            child: FutureBuilder<List<Playlist>>(
-              future: _future,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text(
-                      "Couldn't load playlists",
-                      style: TextStyle(color: Colors.grey[400]),
-                    ),
-                  );
-                }
-                final playlists = snapshot.data ?? [];
-                if (playlists.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'No playlists',
-                      style: TextStyle(color: Colors.grey[400]),
-                    ),
-                  );
-                }
-                return ListView.builder(
-                  itemCount: playlists.length,
-                  itemBuilder: (context, index) {
-                    final playlist = playlists[index];
-                    return ListTile(
-                      leading: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[800],
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Icon(Icons.music_note, color: Colors.grey[500]),
-                      ),
-                      title: Text(
-                        playlist.title,
-                        style: const TextStyle(color: Colors.white),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      onTap: () => _add(playlist),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

@@ -5,8 +5,37 @@ import '../services/api_service.dart';
 import 'common/app_image.dart';
 import '../services/liked_service.dart';
 
+/// Where the bar sits.
+/// - [low] = default position
+/// - [lowest] = lowest (almost at the bottom of the screen)
+enum PlayerBarPosition { low, lowest }
+
+
+/// [position] = preset, [extraOffset] = adontional
+class PlayerBarConfig {
+  final PlayerBarPosition position;
+  final double extraOffset;
+
+  const PlayerBarConfig({
+    this.position = PlayerBarPosition.low,
+    this.extraOffset = 0,
+  });
+  
+  double get totalOffset {
+    switch (position) {
+      case PlayerBarPosition.low:
+        return extraOffset;
+      case PlayerBarPosition.lowest:
+        return extraOffset - 65;
+    }
+  }
+}
+
 class PlayerBar extends StatelessWidget {
   const PlayerBar({super.key});
+
+  static final ValueNotifier<PlayerBarConfig> config =
+      ValueNotifier(const PlayerBarConfig());
 
   @override
   Widget build(BuildContext context) {
