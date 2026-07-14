@@ -58,107 +58,103 @@ class _SavedScreenState extends State<SavedScreen>
 
     return Scaffold(
       backgroundColor: Colors.black,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final created = await showDialog<bool>(
-            context: context,
-            builder: (context) => const CreatePlaylistDialog(),
-          );
+      body: Stack(
+        children: [
+          StreamBuilder<SwrResult<Playlist>>(
+            stream: _playlistStream,
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-          if (created == true) {
-            _startStream();
-          }
-        },
-        backgroundColor: const Color(0xFF001937),
-        foregroundColor: Colors.black,
-        child: const Icon(Icons.add, color: Colors.blue,),
-      ),
-      body: StreamBuilder<SwrResult<Playlist>>(
-        stream: _playlistStream,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return Container(
-              color: Colors.black,
-              child: const Center(child: CircularProgressIndicator()),
-            );
-          }
+              final playlists = _sorted(snapshot.data!.data);
 
-          final playlists = _sorted(snapshot.data!.data);
+              if (playlists.isEmpty) {
+                return const EmptyState(
+                  icon: Icons.queue_music,
+                  message: 'No playlists yet',
+                );
+              }
 
-          if (playlists.isEmpty) {
-            return Container(
-              color: Colors.black,
-              child: const EmptyState(
-                icon: Icons.queue_music,
-                message: 'No playlists yet',
-              ),
-            );
-          }
-
-          return Container(
-            color: Colors.black,
-            child: RefreshIndicator(
-              onRefresh: () async => _startStream(),
-              color: Colors.white,
-              backgroundColor: Colors.grey[900],
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: playlists.length,
-                itemBuilder: (context, index) {
-                  final playlist = playlists[index];
-                  return PlaylistListItem(
-                    playlist: playlist,
-                    onTap: () => Navigator.push(
-                      context,
-                      PageSlideTransition(
-                        child: ListScreen(
-                          cover: playlist.playlistType == 'Liked'
-                              ? AspectRatio(
-                            aspectRatio: 1,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                gradient: const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [Color(0xFF1F77BE), Color(0xFF265E8B)],
+              return RefreshIndicator(
+                onRefresh: () async => _startStream(),
+                color: Colors.white,
+                backgroundColor: Colors.grey[900],
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: playlists.length,
+                  itemBuilder: (context, index) {
+                    final playlist = playlists[index];
+                    return PlaylistListItem(
+                      playlist: playlist,
+                      onTap: () => Navigator.push(
+                        context,
+                        PageSlideTransition(
+                          child: ListScreen(
+                            cover: playlist.playlistType == 'Liked'
+                                ? AspectRatio(
+                              aspectRatio: 1,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  gradient: const LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [Color(0xFF1F77BE), Color(0xFF265E8B)],
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.favorite,
+                                  size: 80,
+                                  color: Colors.white54,
                                 ),
                               ),
-                              child: const Icon(
-                                Icons.favorite,
-                                size: 80,
-                                color: Colors.white54,
+                            )
+                                : AspectRatio(
+                              aspectRatio: 1,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  color: Colors.grey[800],
+                                ),
+                                child: Icon(
+                                  Icons.music_note,
+                                  size: 80,
+                                  color: Colors.grey[600],
+                                ),
                               ),
                             ),
-                          )
-                              : AspectRatio(
-                            aspectRatio: 1,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                color: Colors.grey[800],
-                              ),
-                              child: Icon(
-                                Icons.music_note,
-                                size: 80,
-                                color: Colors.grey[600],
-                              ),
-                            ),
+                            title: playlist.title,
+                            subtitle: playlist.ownerId,
+                            cacheKey: 'playlist_tracks_${playlist.id}',
+                            fetcher: () => ApiService.getPlaylistTracks(playlist.id),
+                            playlistSort: true,
                           ),
-                          title: playlist.title,
-                          subtitle: playlist.ownerId,
-                          cacheKey: 'playlist_tracks_${playlist.id}',
-                          fetcher: () => ApiService.getPlaylistTracks(playlist.id),
-                          playlistSort: true,
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+          Positioned(
+            right: 16,
+            bottom: 72,
+            child: FloatingActionButton(
+              onPressed: () async {
+                final created = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => const CreatePlaylistDialog(),
+                );
+                if (created == true) _startStream();
+              },
+              backgroundColor: const Color(0xFF001937),
+              foregroundColor: Colors.black,
+              child: const Icon(Icons.add, color: Colors.blue),
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
