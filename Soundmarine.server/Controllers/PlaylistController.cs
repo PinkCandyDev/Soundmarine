@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Soundmarine.lib.Library;
 using Soundmarine.lib.Repository;
 using Soundmarine.lib.Model;
 
@@ -70,7 +71,7 @@ public class PlaylistList : BaseController
         DateTime now = DateTime.UtcNow;
         string formatted = now.ToString("o");
         await _playlistRepository.CreatePlaylist(new Playlist(Guid.NewGuid().ToString(), userId, createRequest.name, 0,formatted,
-            "Playlist"));
+            "Playlist", false));
         return Created();
     } 
     
@@ -84,6 +85,8 @@ public class PlaylistList : BaseController
             DateTime now = DateTime.UtcNow;
             string formatted = now.ToString("o");
             await _trackListRepository.AddTrackToPlaylist(id, trackId, formatted);
+            GeneratePlaylisCover generatePlaylisCover = new GeneratePlaylisCover(Program.ConnectionString);
+            await generatePlaylisCover.GenerateCover(id);
             return Ok();
         }
         return NotFound("Playlist not found");

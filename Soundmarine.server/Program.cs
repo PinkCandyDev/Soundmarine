@@ -12,7 +12,7 @@ namespace Soundmarine.server;
 
 public class Program
 {
-    private static string ConnectionString;
+    public static string ConnectionString;
     private static string JwtKey;
 
     public static async Task Main(string[] args)
@@ -100,7 +100,7 @@ public class Program
             DateTime now = DateTime.UtcNow;
             string formatted = now.ToString("o");
             await playlistRepo.CreatePlaylist(new Playlist(Guid.NewGuid().ToString(), userId, "Liked", 0,formatted,
-                "Liked"));
+                "Liked", false));
             Console.WriteLine("Default user saved");
         }
 

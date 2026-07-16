@@ -57,7 +57,8 @@ public class DatabaseInitializer
                 title VARCHAR NOT NULL,
                 trackCount INT NOT NULL,
                 createdAt VARCHAR NOT NULL,
-                playlistType VARCHAR NOT NULL
+                playlistType VARCHAR NOT NULL,
+                isCoverSet BOOLEAN NOT NULL DEFAULT FALSE
             )", conn);
         await playlistsTable.ExecuteNonQueryAsync();
         

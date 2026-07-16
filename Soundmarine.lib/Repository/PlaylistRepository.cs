@@ -17,8 +17,8 @@ public class PlaylistRepository
         await using NpgsqlConnection conn = new NpgsqlConnection(_connectionString);
         await conn.OpenAsync();
         await using NpgsqlCommand cmd = new NpgsqlCommand(@"
-            INSERT INTO playlists (id, ownerId, title, trackCount, createdAt, playlistType)
-            VALUES (@id, @ownerId, @title, @trackCount, @createdAt, @playlistType)
+            INSERT INTO playlists (id, ownerId, title, trackCount, createdAt, playlistType, isCoverSet)
+            VALUES (@id, @ownerId, @title, @trackCount, @createdAt, @playlistType, @isCoverSet)
             ON CONFLICT (id) DO NOTHING", conn);
 
         cmd.Parameters.AddWithValue("id", playlist.Id);
@@ -27,6 +27,7 @@ public class PlaylistRepository
         cmd.Parameters.AddWithValue("trackCount", playlist.TrackCount);
         cmd.Parameters.AddWithValue("createdAt", playlist.CreatedAt);
         cmd.Parameters.AddWithValue("playlistType", playlist.PlaylistType);
+        cmd.Parameters.AddWithValue("isCoverSet", playlist.IsCoverSet);
         await cmd.ExecuteNonQueryAsync();
     }
     
@@ -35,7 +36,7 @@ public class PlaylistRepository
         await using NpgsqlConnection conn = new NpgsqlConnection(_connectionString);
         await conn.OpenAsync();
         await using NpgsqlCommand cmd = new NpgsqlCommand(
-            "SELECT id, ownerId, title, trackCount, createdAt, playlistType FROM playlists WHERE ownerId = @ownerId", conn);
+            "SELECT id, ownerId, title, trackCount, createdAt, playlistType, isCoverSet FROM playlists WHERE ownerId = @ownerId", conn);
         cmd.Parameters.AddWithValue("ownerId", ownerId);
 
         await using NpgsqlDataReader reader = await cmd.ExecuteReaderAsync();
@@ -48,7 +49,8 @@ public class PlaylistRepository
                 reader.GetString(2),
                 reader.GetInt32(3),
                 reader.GetString(4),
-                reader.GetString(5)
+                reader.GetString(5),
+                reader.GetBoolean(6)
             ));
         }
         return playlists;

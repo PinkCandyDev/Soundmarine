@@ -10,8 +10,9 @@ public class Playlist
     public int TrackCount { get; set; }
     public string CreatedAt { get; set; }
     public string PlaylistType { get; set; }
+    public bool IsCoverSet { get; set; }
     
-    public Playlist(string id, string ownerId, string title, int trackCount, string createdAt, string playlistType)
+    public Playlist(string id, string ownerId, string title, int trackCount, string createdAt, string playlistType, bool isCoverSet)
     {
         Id = id;
         OwnerId = ownerId;
@@ -19,5 +20,6 @@ public class Playlist
         TrackCount = trackCount;
         CreatedAt = createdAt;
         PlaylistType = playlistType;
+        IsCoverSet = isCoverSet;
     }
 }
