@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 import '../models/playlist.dart';
+import 'common/app_image.dart';
 
 /// A list row for a [Playlist] with a coloured thumbnail, title and type label.
 class PlaylistListItem extends StatelessWidget {
   final Playlist playlist;
   final VoidCallback onTap;
+  final int refreshNonce;
 
   const PlaylistListItem({
     super.key,
     required this.playlist,
     required this.onTap,
+    this.refreshNonce = 0,
   });
+
+  String get _coverUrl {
+    final base = playlist.coverUrl;
+    final separator = playlist.coverUpdatedAt != null ? '&' : '?';
+    return '$base${separator}v=$refreshNonce';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,14 +76,16 @@ class PlaylistListItem extends StatelessWidget {
       );
     }
 
-    return Container(
+    return SizedBox(
       width: 70,
       height: 70,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(4),
-        color: Colors.grey[800],
+      child: AppImage(
+        key: ValueKey('pl_${playlist.id}_$refreshNonce'),
+        imageUrl: _coverUrl,
+        fit: BoxFit.cover,
+        borderRadius: 4,
+        placeholderIcon: Icons.music_note,
       ),
-      child: Icon(Icons.music_note, color: Colors.grey[600], size: 28),
     );
   }
 

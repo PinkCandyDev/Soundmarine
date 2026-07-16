@@ -203,10 +203,12 @@ class _PlaylistPicker extends StatefulWidget {
 
 class _PlaylistPickerState extends State<_PlaylistPicker> {
   late Future<List<Playlist>> _future;
+  late int _pickerNonce;
 
   @override
   void initState() {
     super.initState();
+    _pickerNonce = DateTime.now().millisecondsSinceEpoch;
     _future = ApiService.getPlaylists().then((playlists) {
       if (mounted) _setOffset(playlists.length);
       return playlists;
@@ -222,7 +224,7 @@ class _PlaylistPickerState extends State<_PlaylistPicker> {
   }
 
   void _setOffset(int count) {
-    final extra = ((count.clamp(1, 4) - 1).clamp(0, 3)) * 20.0;
+    final extra = ((count.clamp(1, 4) - 1).clamp(0, 3)) * 50.0;
     PlayerBar.config.value = PlayerBarConfig(extraOffset: 80 + extra);
   }
   Future<void> _add(Playlist playlist) async {
@@ -322,14 +324,30 @@ class _PlaylistPickerState extends State<_PlaylistPicker> {
                     itemBuilder: (context, index) {
                       final playlist = playlists[index];
                       return ListTile(
-                        leading: Container(
+                        leading: playlist.playlistType == 'Liked'
+                            ? Container(
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: Colors.grey[800],
                             borderRadius: BorderRadius.circular(6),
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xFF1F77BE), Color(0xFF265E8B)],
+                            ),
                           ),
-                          child: Icon(Icons.music_note, color: Colors.grey[500]),
+                          child: const Icon(Icons.favorite, color: Colors.white, size: 22),
+                        )
+                            : SizedBox(
+                          width: 44,
+                          height: 44,
+                          child: AppImage(
+                            key: ValueKey('plpicker_${playlist.id}_$_pickerNonce'),
+                            imageUrl: '${playlist.coverUrl}${playlist.coverUpdatedAt != null ? '&' : '?'}_=$_pickerNonce',
+                            fit: BoxFit.cover,
+                            borderRadius: 6,
+                            placeholderIcon: Icons.music_note,
+                          ),
                         ),
                         title: Text(
                           playlist.title,

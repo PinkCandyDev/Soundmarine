@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/playlist.dart';
 import '../services/api_service.dart';
 import '../services/swr_service.dart';
+import '../widgets/common/app_image.dart';
 import '../widgets/common/empty_state.dart';
 import '../widgets/common/page_slide_transition.dart';
 import '../widgets/create_playlist_dialog.dart';
@@ -21,6 +22,7 @@ class _SavedScreenState extends State<SavedScreen>
   @override
   bool get wantKeepAlive => true;
 
+  int _refreshNonce = 0;
   Stream<SwrResult<Playlist>> _playlistStream = const Stream.empty();
 
   @override
@@ -63,6 +65,12 @@ class _SavedScreenState extends State<SavedScreen>
           StreamBuilder<SwrResult<Playlist>>(
             stream: _playlistStream,
             builder: (context, snapshot) {
+              if (snapshot.hasData && !snapshot.data!.isFromCache && snapshot.data!.isUpdated) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) setState(() => _refreshNonce++);
+                });
+              }
+
               if (!snapshot.hasData) {
                 return const Center(child: CircularProgressIndicator());
               }
@@ -87,10 +95,12 @@ class _SavedScreenState extends State<SavedScreen>
                     final playlist = playlists[index];
                     return PlaylistListItem(
                       playlist: playlist,
-                      onTap: () => Navigator.push(
-                        context,
-                        PageSlideTransition(
-                          child: ListScreen(
+                      refreshNonce: _refreshNonce,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          PageSlideTransition(
+                            child: ListScreen(
                             cover: playlist.playlistType == 'Liked'
                                 ? AspectRatio(
                               aspectRatio: 1,
@@ -110,19 +120,11 @@ class _SavedScreenState extends State<SavedScreen>
                                 ),
                               ),
                             )
-                                : AspectRatio(
-                              aspectRatio: 1,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16),
-                                  color: Colors.grey[800],
-                                ),
-                                child: Icon(
-                                  Icons.music_note,
-                                  size: 80,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
+                                : AppCoverImage(
+                              key: ValueKey('plcover_${playlist.id}_$_refreshNonce'),
+                              imageUrl: '${playlist.coverUrl}${playlist.coverUpdatedAt != null ? '&' : '?'}v=$_refreshNonce',
+                              fallbackIcon: Icons.music_note,
+                              fallbackIconSize: 80,
                             ),
                             title: playlist.title,
                             subtitle: playlist.ownerId,
@@ -131,14 +133,15 @@ class _SavedScreenState extends State<SavedScreen>
                             playlistSort: true,
                           ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
-          ),
-          Positioned(
+                      ).then((_) => _startStream());
+                    },
+                  );
+                },
+              ),
+            );
+          },
+        ),
+        Positioned(
             right: 16,
             bottom: 72,
             child: FloatingActionButton(
