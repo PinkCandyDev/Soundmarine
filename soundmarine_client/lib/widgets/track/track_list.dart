@@ -9,6 +9,8 @@ class TrackList extends StatelessWidget {
   final bool playlist;
   final String? token;
   final bool isOffline;
+  final String? playlistId;
+  final VoidCallback? onTrackRemoved;
 
   const TrackList({
     super.key,
@@ -16,6 +18,8 @@ class TrackList extends StatelessWidget {
     required this.playlist,
     this.token,
     this.isOffline = false,
+    this.playlistId,
+    this.onTrackRemoved,
   });
 
   List<Track> _sorted() {
@@ -39,23 +43,24 @@ class TrackList extends StatelessWidget {
     return SliverFixedExtentList(
       itemExtent: 76,
       delegate: SliverChildBuilderDelegate(
-        (context, index) {
+            (context, index) {
           final track = sortedTracks[index];
           final cached = AudioProxyServer.instance.isCached(track.id);
           final dim = isOffline && !cached;
-
           return TrackRow(
             track: track,
             token: token,
             dimmed: dim,
+            playlistId: playlistId,
+            onTrackRemoved: onTrackRemoved,
             onTap: () {
               final queue = sortedTracks
                   .map((t) => QueueTrack(
-                        trackId: t.id,
-                        title: t.title,
-                        albumId: t.albumId,
-                        artistName: t.artistName,
-                      ))
+                trackId: t.id,
+                title: t.title,
+                albumId: t.albumId,
+                artistName: t.artistName,
+              ))
                   .toList();
               AudioPlayerService.setQueue(queue, index);
             },

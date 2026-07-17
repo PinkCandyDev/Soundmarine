@@ -16,6 +16,7 @@ class ListScreen extends StatefulWidget {
   final String cacheKey;
   final Future<List<Track>> Function() fetcher;
   final bool playlistSort;
+  final String? playlistId;
 
   const ListScreen({
     super.key,
@@ -25,6 +26,7 @@ class ListScreen extends StatefulWidget {
     required this.cacheKey,
     required this.fetcher,
     this.playlistSort = false,
+    this.playlistId,
   });
 
   @override
@@ -48,15 +50,19 @@ class _ListScreenState extends State<ListScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 350), () {
         if (!mounted) return;
-        setState(() {
-          _trackStream = SwrService.fetchList<Track>(
-            cacheKey: widget.cacheKey,
-            fetcher: widget.fetcher,
-            toJson: (Track t) => t.toJson(),
-            fromJson: Track.fromJson,
-          );
-        });
+        _refresh();
       });
+    });
+  }
+
+  void _refresh() {
+    setState(() {
+      _trackStream = SwrService.fetchList<Track>(
+        cacheKey: widget.cacheKey,
+        fetcher: widget.fetcher,
+        toJson: (Track t) => t.toJson(),
+        fromJson: Track.fromJson,
+      );
     });
   }
 
@@ -118,6 +124,8 @@ class _ListScreenState extends State<ListScreen> {
                       playlist: widget.playlistSort,
                       token: _token,
                       isOffline: snapshot.data?.isOffline ?? false,
+                      playlistId: widget.playlistId,
+                      onTrackRemoved: _refresh,
                     ),
                 ],
               );

@@ -11,6 +11,8 @@ class TrackRow extends StatelessWidget {
   final String? token;
   final bool dimmed;
   final VoidCallback onTap;
+  final String? playlistId;
+  final VoidCallback? onTrackRemoved;
 
   const TrackRow({
     super.key,
@@ -18,6 +20,8 @@ class TrackRow extends StatelessWidget {
     this.token,
     this.dimmed = false,
     required this.onTap,
+    this.playlistId,
+    this.onTrackRemoved,
   });
 
   String _formatDuration(int seconds) {
@@ -66,7 +70,12 @@ class TrackRow extends StatelessWidget {
               _LikeButton(trackId: track.id),
               IconButton(
                 icon: Icon(Icons.more_horiz, color: Colors.grey[500]),
-                onPressed: () => showTrackOptionsSheet(context, track),
+                onPressed: () => showTrackOptionsSheet(
+                  context,
+                  track,
+                  playlistId: playlistId,
+                  onRemoved: onTrackRemoved,
+                ),
               ),
             ],
           ),
@@ -79,7 +88,6 @@ class TrackRow extends StatelessWidget {
 /// A toggle like/unlike button that stays in sync with [LikedService].
 class _LikeButton extends StatefulWidget {
   final String trackId;
-
   const _LikeButton({required this.trackId});
 
   @override
@@ -90,7 +98,6 @@ class _LikeButtonState extends State<_LikeButton> {
   @override
   Widget build(BuildContext context) {
     final liked = LikedService.instance.isLiked(widget.trackId);
-
     return IconButton(
       icon: Icon(
         liked ? Icons.favorite : Icons.favorite_border,

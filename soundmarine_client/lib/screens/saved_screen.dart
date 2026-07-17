@@ -131,6 +131,7 @@ class _SavedScreenState extends State<SavedScreen>
                             cacheKey: 'playlist_tracks_${playlist.id}',
                             fetcher: () => ApiService.getPlaylistTracks(playlist.id),
                             playlistSort: true,
+                            playlistId: playlist.id,
                           ),
                         ),
                       ).then((_) => _startStream());

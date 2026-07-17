@@ -8,9 +8,19 @@ import '../../widgets/common/app_image.dart';
 import '../../widgets/common/page_slide_transition.dart';
 import '../../widgets/player_bar.dart';
 
-Future<void> showTrackOptionsSheet(BuildContext context, Track track) {
+Future<void> showTrackOptionsSheet(
+    BuildContext context,
+    Track track, {
+      String? playlistId,
+      VoidCallback? onRemoved,
+    }) {
   final previousConfig = PlayerBar.config.value;
-  PlayerBar.config.value = const PlayerBarConfig(extraOffset: 80);
+  if(playlistId != null) {
+    PlayerBar.config.value = const PlayerBarConfig(extraOffset: 150);
+  }
+  else {
+    PlayerBar.config.value = const PlayerBarConfig(extraOffset: 80);
+  }
   return showModalBottomSheet(
     context: context,
     backgroundColor: Colors.black,
@@ -18,14 +28,28 @@ Future<void> showTrackOptionsSheet(BuildContext context, Track track) {
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
-    builder: (context) => TrackOptionsSheet(track: track, previousConfig: previousConfig),
+    builder: (context) => TrackOptionsSheet(
+      track: track,
+      previousConfig: previousConfig,
+      playlistId: playlistId,
+      onRemoved: onRemoved,
+    ),
   );
 }
 
 class TrackOptionsSheet extends StatefulWidget {
   final Track track;
   final PlayerBarConfig previousConfig;
-  const TrackOptionsSheet({super.key, required this.track, required this.previousConfig});
+  final String? playlistId;
+  final VoidCallback? onRemoved;
+
+  const TrackOptionsSheet({
+    super.key,
+    required this.track,
+    required this.previousConfig,
+    this.playlistId,
+    this.onRemoved,
+  });
 
   @override
   State<TrackOptionsSheet> createState() => _TrackOptionsSheetState();
@@ -96,6 +120,14 @@ class _TrackOptionsSheetState extends State<TrackOptionsSheet> {
     );
   }
 
+  Future<void> _removeFromPlaylist() async {
+    final playlistId = widget.playlistId;
+    if (playlistId == null) return;
+    Navigator.of(context).pop();
+      await ApiService.removeFromPlaylist(playlistId, widget.track.id);
+      widget.onRemoved?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -114,13 +146,18 @@ class _TrackOptionsSheetState extends State<TrackOptionsSheet> {
           track: widget.track,
           onBack: () {
             setState(() => _showingPlaylists = false);
-            PlayerBar.config.value = const PlayerBarConfig(extraOffset: 80);
+            if (widget.playlistId != null) {
+              PlayerBar.config.value = const PlayerBarConfig(extraOffset: 150);
+            } else {
+              PlayerBar.config.value = const PlayerBarConfig(extraOffset: 80);
+            }
           },
         )
             : _MainOptions(
           key: const ValueKey('main'),
           onAddToPlaylist: () => setState(() => _showingPlaylists = true),
           onGoToAlbum: _goToAlbum,
+          onRemoveFromPlaylist: widget.playlistId != null ? _removeFromPlaylist : null,
         ),
       ),
     );
@@ -130,10 +167,12 @@ class _TrackOptionsSheetState extends State<TrackOptionsSheet> {
 class _MainOptions extends StatelessWidget {
   final VoidCallback onAddToPlaylist;
   final VoidCallback onGoToAlbum;
+  final VoidCallback? onRemoveFromPlaylist;
   const _MainOptions({
     super.key,
     required this.onAddToPlaylist,
     required this.onGoToAlbum,
+    this.onRemoveFromPlaylist,
   });
 
   @override
@@ -161,6 +200,13 @@ class _MainOptions extends StatelessWidget {
           label: 'Go to album',
           onTap: onGoToAlbum,
         ),
+        if (onRemoveFromPlaylist != null)
+          _OptionTile(
+            icon: Icons.playlist_remove,
+            label: 'Remove from playlist',
+            onTap: onRemoveFromPlaylist!,
+            destructive: true,
+          ),
         const SizedBox(height: 8),
       ],
     );
@@ -172,17 +218,20 @@ class _OptionTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool destructive;
   const _OptionTile({
     required this.icon,
     required this.label,
     required this.onTap,
+    this.destructive = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final color = destructive ? Colors.redAccent : Colors.grey[300];
     return ListTile(
-      leading: Icon(icon, color: Colors.grey[300]),
-      title: Text(label, style: const TextStyle(color: Colors.white)),
+      leading: Icon(icon, color: color),
+      title: Text(label, style: TextStyle(color: destructive ? Colors.redAccent : Colors.white)),
       onTap: onTap,
     );
   }
@@ -214,7 +263,7 @@ class _PlaylistPickerState extends State<_PlaylistPicker> {
       return playlists;
     });
   }
-  
+
   double _pickerHeight(int count) {
     const handle = 20.0;   // 8 + 4 + 8
     const header = 56.0;
